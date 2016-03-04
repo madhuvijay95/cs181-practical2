@@ -68,7 +68,6 @@ sample_counts = [1, 2]
 est_counts = [5, 10, 15, 20, 50, 100, 250, 500, 1000]
 RF_results = dict()
 for s, e in itertools.product(sample_counts, est_counts):
-    print (s, e)
     # use 10-fold cross-validation because 5-fold cross-validation had a lot of variance in optimal parameters
     RF_results[(s,e)] = np.mean(cross_val_score(RandomForestClassifier(n_estimators=e, min_samples_split=10), X[train_mask], t[train_mask], cv=10))
 s_opt, e_opt = max(RF_results, key = lambda tup : RF_results[tup])
@@ -85,7 +84,6 @@ sample_counts = [1, 2]
 est_counts = [5, 10, 15, 20, 50, 100, 250, 500, 1000]
 ET_results = dict()
 for s, e in itertools.product(sample_counts, est_counts):
-    print (s, e)
     # use 10-fold cross-validation because 5-fold cross-validation had a lot of variance in optimal parameters
     ET_results[(s,e)] = np.mean(cross_val_score(ExtraTreesClassifier(n_estimators=e, min_samples_split=10), X[train_mask], t[train_mask], cv=10))
 s_opt, e_opt = max(ET_results, key = lambda tup : ET_results[tup])
