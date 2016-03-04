@@ -87,7 +87,7 @@ def create_data_matrix(num=None):
 
     X = X.T
     for i in range(len(X)):
-        if X[i].any() and not X[i].all():
+        if X[i].any() and len(set(X[i])) > 2:
             X = np.vstack((X, ECDF(X[i])(X[i])))
             features.append(features[i] + ' ECDF')
     X = X.T
@@ -142,7 +142,7 @@ def main():
     print X.shape
 
     # indices of all nontrivial columns
-    indices = [i for i in range(X.shape[1]) if X[:,i].any() and not X[:,i].all()]
+    indices = [i for i in range(X.shape[1]) if X[:,i].any() and len(set(X[:,i])) > 1]
     X = X[:,indices]
     features = np.array(features)[indices]
     print 'Number of features:', len(features)
