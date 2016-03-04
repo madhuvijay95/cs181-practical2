@@ -30,7 +30,7 @@ for type in classes:
             text = reading.read()
 
             length = len(text.split("\n"))/1000.0
-            length = 1
+            # length = 1
 
             for word in words:
                 data[type][word].append(text.count(word)/length)
