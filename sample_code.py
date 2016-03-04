@@ -24,18 +24,10 @@ TRAIN_DIR = "train"
 call_list = pickle.load(open('tag_list.p', 'r'))
 call_set = set(call_list)
 
-
-#features = ['sleep', 'dump_line']
 features = call_list + map(lambda s : s + ' indicator', call_list) + map(str, range(4000))\
-           + ['has_socket', 'has_import', 'has_export', 'bytes_sent', 'bytes_received', 'any_sent', 'any_received', 'totaltime']
-#features = call_list + ['bytes_sent', 'bytes_received', 'any_sent', 'any_received', 'totaltime']
-
-
-
-#def add_to_set(tree):
-#    for el in tree.iter():
-#        call = el.tag
-#        call_set.add(call)
+           + ['has_socket', 'socket count', 'has_import', 'has_export', 'FILE_ANY_ACCESS', 'SECURITY_ANONYMOUS',
+              'destroy_window', 'targetpid count', 'delete_value count', 'bytes_sent', 'bytes_received', 'any_sent',
+              'any_received', 'totaltime']
 
 def create_data_matrix(num=None):
     X = None
@@ -75,9 +67,17 @@ def create_data_matrix(num=None):
         tree = ET.parse(os.path.join(direc, datafile))
 
         this_row_dict = call_feats(tree)
-        this_row_dict['has_socket'] = int('socket' in open(os.path.join(direc, datafile), 'r').read())
-        this_row_dict['has_import'] = int('import' in open(os.path.join(direc, datafile), 'r').read())
-        this_row_dict['has_export'] = int('export' in open(os.path.join(direc, datafile), 'r').read())
+        str = open(os.path.join(direc, datafile), 'r').read()
+        this_row_dict['has_socket'] = int('socket' in str)
+        this_row_dict['has_import'] = int('import' in str)
+        this_row_dict['has_export'] = int('export' in str)
+        this_row_dict['socket count'] = str.count('socket')
+        this_row_dict['FILE_ANY_ACCESS'] = int('FILE_ANY_ACCESS' in str)
+        this_row_dict['SECURITY_ANONYMOUS'] = int('SECURITY_ANONYMOUS' in str)
+        this_row_dict['destroy_window'] = int('destroy_window' in str)
+        this_row_dict['targetpid count'] = str.count('targetpid')
+        this_row_dict['delete_value count'] = str.count('delete_value')
+
         this_row = np.array([(this_row_dict[feature] if feature in this_row_dict else 0) for feature in features])
         #this_row = call_feats(tree)
         if X is None:
