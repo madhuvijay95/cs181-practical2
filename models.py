@@ -10,7 +10,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SelectFromModel
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB, GaussianNB
 import itertools
 
 from sknn.mlp import Classifier, Layer
@@ -29,7 +29,7 @@ train_list = np.random.choice(range(len(X)), size = 0.7 * len(X), replace=False)
 train_mask = np.array([i in train_list for i in range(len(X))])
 valid_mask = ~train_mask
 
-def validate(clf):
+def feature_select(clf):
     cvscore = np.mean(cross_val_score(clf, X, t))
     clf.fit(X, t)
     try:
@@ -70,30 +70,62 @@ accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
 clf.fit(X, t)
 results['LinearSVC'] = (clf, range(X.shape[1]), accuracy)
 print 'LinearSVC:', accuracy
-#clf.feature_importance_
-#_, _, _, feature_mask, accuracy, clf = validate(clf)
-#results['LinearSVC'] = (clf, accuracy)
 
-clf = RandomForestClassifier(min_samples_split=1)
-_, _, _, feature_mask, _, clf = validate(clf)
+sample_counts = [1, 2]
+est_counts = [5, 10, 15, 20, 50, 100, 250, 500, 1000]
+RF_results = dict()
+for s, e in itertools.product(sample_counts, est_counts):
+    print (s, e)
+    # use 10-fold cross-validation because 5-fold cross-validation had a lot of variance in optimal parameters
+    RF_results[(s,e)] = np.mean(cross_val_score(RandomForestClassifier(n_estimators=e, min_samples_split=10), X[train_mask], t[train_mask], cv=10))
+#print list(reversed(np.argsort(RF_results.values())))
+#print [RF_results.keys()[tup] for tup in reversed(np.argsort(RF_results.values()))]
+#print [RF_results[RF_results.keys()[tup]] for tup in reversed(np.argsort(RF_results.values()))]
+s_opt, e_opt = max(RF_results, key = lambda tup : RF_results[tup])
+
+clf = RandomForestClassifier(n_estimators=e_opt, min_samples_split=s_opt)
+_, _, _, feature_mask, _, clf = feature_select(clf)
 accuracy = valid_accuracy(clf)
-results['RandomForest'] = (clf, feature_mask, accuracy)
-print 'Random Forest:', accuracy
+results['RandomForest (n_est=%d, min_samples_split=%d)' % (e_opt, s_opt)] = (clf, feature_mask, accuracy)
+print 'Random Forest (n_est=%d, min_samples_split=%d):' % (e_opt, s_opt), accuracy
 #print list(enumerate(reversed(np.array(features)[np.argsort(clf.feature_importances_)])))
-#X_new = SelectFromModel(clf, threshold=str(best_select[1]) + '*' + best_select[0], prefit=True).transform(X)
-#pickle.dump(clf, open('clf.p', 'w'))
 
-clf = ExtraTreesClassifier(min_samples_split=1)
-_, _, _, feature_mask, _, clf = validate(clf)
-accuracy = valid_accuracy(clf)
-results['ExtraTrees'] = (clf, feature_mask, accuracy)
-print 'Extra Random Trees:', accuracy
 
-clf = DecisionTreeClassifier(min_samples_split=1)
-_, _, _, feature_mask, _, clf = validate(clf)
+
+sample_counts = [1, 2]
+est_counts = [5, 10, 15, 20, 50, 100, 250, 500, 1000]
+ET_results = dict()
+for s, e in itertools.product(sample_counts, est_counts):
+    print (s, e)
+    # use 10-fold cross-validation because 5-fold cross-validation had a lot of variance in optimal parameters
+    ET_results[(s,e)] = np.mean(cross_val_score(ExtraTreesClassifier(n_estimators=e, min_samples_split=10), X[train_mask], t[train_mask], cv=10))
+#print list(reversed(np.argsort(ET_results.values())))
+#print [ET_results.keys()[tup] for tup in reversed(np.argsort(ET_results.values()))]
+#print [ET_results[ET_results.keys()[tup]] for tup in reversed(np.argsort(ET_results.values()))]
+s_opt, e_opt = max(ET_results, key = lambda tup : ET_results[tup])
+print s_opt, e_opt
+
+clf = ExtraTreesClassifier(n_estimators=e_opt, min_samples_split=s_opt)
+#clf = RandomForestClassifier(min_samples_split=1)
+_, _, _, feature_mask, _, clf = feature_select(clf)
 accuracy = valid_accuracy(clf)
-results['DecisionTree'] = (clf, feature_mask, accuracy)
-print 'Decision Tree:', accuracy
+results['ExtraTrees (n_est=%d, min_samples_split=%d)' % (e_opt, s_opt)] = (clf, feature_mask, accuracy)
+print 'ExtraTrees (n_est=%d, min_samples_split=%d):' % (e_opt, s_opt), accuracy
+
+
+
+
+DT_results = dict()
+for s in [1,2,3]:
+    # use 10-fold cross-validation because 5-fold cross-validation had a lot of variance in optimal parameters
+    DT_results[s] = np.mean(cross_val_score(DecisionTreeClassifier(min_samples_split=s), X[train_mask], t[train_mask], cv=10))
+s_opt = max(DT_results, key = lambda s : DT_results[s])
+clf = DecisionTreeClassifier(min_samples_split=s_opt)
+_, _, _, feature_mask, _, clf = feature_select(clf)
+accuracy = valid_accuracy(clf)
+results['Decision Tree (n_est=%d)' % s_opt] = (clf, feature_mask, accuracy)
+print 'Decision Tree (n_est=%d):' % s_opt, accuracy
+
 
 clf = LogisticRegression()
 accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
@@ -107,19 +139,27 @@ clf.fit(X, t)
 results['LogisticRegressionMultinomial'] = (clf, range(X.shape[1]), accuracy)
 print 'Logistic Regression (Multinomial):', accuracy
 
-clf = MultinomialNB()
+#clf = MultinomialNB()
+#accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
+#clf.fit(X, t)
+#results['MultinomialNB'] = (clf, range(X.shape[1]), accuracy)
+#print 'Multinomial NB:', accuracy
+
+clf = GaussianNB()
 accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
 clf.fit(X, t)
-results['MultinomialNB'] = (clf, range(X.shape[1]), accuracy)
-print 'Multinomial NB:', accuracy
+results['GaussianNB'] = (clf, range(X.shape[1]), accuracy)
+print 'Gaussian NB:', accuracy
 
-clf = KNeighborsClassifier(n_neighbors=20, weights='distance')
+kNN_results = dict()
+for k in [1, 5, 10, 20, 30, 40, 50]:
+    kNN_results[k] = np.mean(cross_val_score(KNeighborsClassifier(n_neighbors=k, weights='distance'), X[train_mask], t[train_mask]))
+k_opt = max(kNN_results, key = lambda k : kNN_results[k])
+clf = KNeighborsClassifier(n_neighbors=k_opt, weights='distance')
 accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
 clf.fit(X, t)
-results['kNN (k=20)'] = (clf, range(X.shape[1]), accuracy)
-print 'k-Nearest Neighbors (k=20):', accuracy
-#print [np.mean(cross_val_score(KNeighborsClassifier(n_neighbors=n_neighbors), X, t)) for n_neighbors in range(1,21)]
-
+results['kNN (k=%d)' % k_opt] = (clf, range(X.shape[1]), accuracy)
+print 'k-Nearest Neighbors (k=%d):' % k_opt, accuracy
 
 best_model_name = max(results, key = lambda k : results[k][2])
 best = results[best_model_name]
