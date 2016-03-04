@@ -1,8 +1,6 @@
 import cPickle as pickle
 import numpy as np
 
-import util
-
 from sklearn.cross_validation import cross_val_score
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
@@ -12,11 +10,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SelectFromModel
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 import itertools
-
-from sknn.mlp import Classifier, Layer
-#import skflow
-
-import matplotlib.pyplot as plt
 
 
 ids, X, t, features = pickle.load(open('data_matrix.p', 'r'))
@@ -78,9 +71,6 @@ for s, e in itertools.product(sample_counts, est_counts):
     print (s, e)
     # use 10-fold cross-validation because 5-fold cross-validation had a lot of variance in optimal parameters
     RF_results[(s,e)] = np.mean(cross_val_score(RandomForestClassifier(n_estimators=e, min_samples_split=10), X[train_mask], t[train_mask], cv=10))
-#print list(reversed(np.argsort(RF_results.values())))
-#print [RF_results.keys()[tup] for tup in reversed(np.argsort(RF_results.values()))]
-#print [RF_results[RF_results.keys()[tup]] for tup in reversed(np.argsort(RF_results.values()))]
 s_opt, e_opt = max(RF_results, key = lambda tup : RF_results[tup])
 
 clf = RandomForestClassifier(n_estimators=e_opt, min_samples_split=s_opt)
@@ -88,7 +78,6 @@ _, _, _, feature_mask, _, clf = feature_select(clf)
 accuracy = valid_accuracy(clf)
 results['RandomForest (n_est=%d, min_samples_split=%d)' % (e_opt, s_opt)] = (clf, feature_mask, accuracy)
 print 'Random Forest (n_est=%d, min_samples_split=%d):' % (e_opt, s_opt), accuracy
-#print list(enumerate(reversed(np.array(features)[np.argsort(clf.feature_importances_)])))
 
 
 
@@ -99,14 +88,10 @@ for s, e in itertools.product(sample_counts, est_counts):
     print (s, e)
     # use 10-fold cross-validation because 5-fold cross-validation had a lot of variance in optimal parameters
     ET_results[(s,e)] = np.mean(cross_val_score(ExtraTreesClassifier(n_estimators=e, min_samples_split=10), X[train_mask], t[train_mask], cv=10))
-#print list(reversed(np.argsort(ET_results.values())))
-#print [ET_results.keys()[tup] for tup in reversed(np.argsort(ET_results.values()))]
-#print [ET_results[ET_results.keys()[tup]] for tup in reversed(np.argsort(ET_results.values()))]
 s_opt, e_opt = max(ET_results, key = lambda tup : ET_results[tup])
 print s_opt, e_opt
 
 clf = ExtraTreesClassifier(n_estimators=e_opt, min_samples_split=s_opt)
-#clf = RandomForestClassifier(min_samples_split=1)
 _, _, _, feature_mask, _, clf = feature_select(clf)
 accuracy = valid_accuracy(clf)
 results['ExtraTrees (n_est=%d, min_samples_split=%d)' % (e_opt, s_opt)] = (clf, feature_mask, accuracy)
@@ -163,38 +148,3 @@ feature_mask = best[1]
 print 'Best model: %s (accuracy %f)' % (best_model_name, results[best_model_name][2])
 pickle.dump((feature_mask, clf), open('classifier.p', 'w'))
 pickle.dump(results, open('classifier_results.p', 'w'))
-
-
-#clf = skflow.TensorFlowLinearClassifier()
-#clf.fit(X[train_mask], t[train_mask])
-#predictions = clf.predict(X[valid_mask])
-#print float(sum(np.array(predictions) == t[valid_mask])) / len(t[valid_mask])
-
-
-
-#from sklearn.neural_network import MLPClassifier
-
-
-
-#from keras.models import Sequential
-#from keras.layers import Dense, Dropout, Activation
-#from keras.optimizers import SGD
-#model = Sequential()
-#model.add(Dense(64, input_dim=X.shape[1], init='uniform'))
-#model.add(Activation('tanh'))
-#model.add(Dropout(0.5))
-#model.add(Dense(64, init='uniform'))
-#model.add(Activation('tanh'))
-#model.add(Dropout(0.5))
-#model.add(Dense(10, init='uniform'))
-#model.add(Activation('softmax'))
-#sgd = SGD(lr=0.1, decay=1e-6, momentum=0.9, nesterov=True)
-#model.compile(loss='categorical_crossentropy', optimizer=sgd)
-#model.fit(X[train_mask], t[train_mask], nb_epoch=20, batch_size=16, show_accuracy=True)
-#score = model.evaluate(X[valid_mask], t[valid_mask], batch_size=16)
-
-
-#mlp = Classifier(layers = [Layer('Sigmoid', units=128), Layer('Tanh', units=64), Layer(type='Softmax')])
-#mlp.fit(X[train_mask], t[train_mask])
-#predictions = mlp.predict(X[valid_mask])[:,0]
-#print float(np.sum(np.array(predictions) == t[valid_mask])) / len(t[valid_mask])
