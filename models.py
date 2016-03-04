@@ -146,14 +146,15 @@ results['GaussianNB'] = (clf, range(X.shape[1]), accuracy)
 print 'Gaussian NB:', accuracy
 
 kNN_results = dict()
-for k in [1, 5, 10, 20, 30, 40, 50]:
-    kNN_results[k] = np.mean(cross_val_score(KNeighborsClassifier(n_neighbors=k, weights='distance'), X[train_mask], t[train_mask]))
-k_opt = max(kNN_results, key = lambda k : kNN_results[k])
-clf = KNeighborsClassifier(n_neighbors=k_opt, weights='distance')
+for w, k in itertools.product(['uniform','distance'], [1, 5, 10, 20, 30, 40, 50]):
+    print (w,k)
+    kNN_results[(w,k)] = np.mean(cross_val_score(KNeighborsClassifier(n_neighbors=k, weights=w), X[train_mask], t[train_mask]))
+w_opt, k_opt = max(kNN_results, key = lambda k : kNN_results[k])
+clf = KNeighborsClassifier(n_neighbors=k_opt, weights=w_opt)
 accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
 clf.fit(X, t)
-results['kNN (k=%d)' % k_opt] = (clf, range(X.shape[1]), accuracy)
-print 'k-Nearest Neighbors (k=%d):' % k_opt, accuracy
+results['kNN (weight=%s, k=%d)' % (w_opt, k_opt)] = (clf, range(X.shape[1]), accuracy)
+print 'k-Nearest Neighbors (weight=%s, k=%d):' % (w_opt, k_opt), accuracy
 
 best_model_name = max(results, key = lambda k : results[k][2])
 best = results[best_model_name]
