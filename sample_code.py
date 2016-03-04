@@ -1,18 +1,10 @@
-# Example Feature Extraction from XML Files
-# We count the number of specific system calls made by the programs, and use
-# these as our features.
-
-# This code requires that the unzipped training set is in a folder called "train". 
-
 import os
-from collections import Counter
 from datetime import datetime
 try:
     import xml.etree.cElementTree as ET
 except ImportError:
     import xml.etree.ElementTree as ET
 import numpy as np
-from scipy import sparse
 import cPickle as pickle
 import sys
 from scikits.statsmodels.distributions import ECDF # installed from http://scikits.appspot.com/statsmodels
