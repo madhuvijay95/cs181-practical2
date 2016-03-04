@@ -139,12 +139,6 @@ clf.fit(X, t)
 results['LogisticRegressionMultinomial'] = (clf, range(X.shape[1]), accuracy)
 print 'Logistic Regression (Multinomial):', accuracy
 
-#clf = MultinomialNB()
-#accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
-#clf.fit(X, t)
-#results['MultinomialNB'] = (clf, range(X.shape[1]), accuracy)
-#print 'Multinomial NB:', accuracy
-
 clf = GaussianNB()
 accuracy = valid_accuracy(clf)#np.mean(cross_val_score(clf, X, t))
 clf.fit(X, t)

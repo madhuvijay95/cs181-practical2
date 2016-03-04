@@ -129,8 +129,6 @@ def call_feats(tree):
         if 'socket' in el.attrib:
             if el.attrib['socket'] in features:
                 call_counter[el.attrib['socket']] = 1
-
-
     return call_counter
 
 ## Feature extraction
