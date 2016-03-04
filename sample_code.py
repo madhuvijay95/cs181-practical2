@@ -19,16 +19,18 @@ from scikits.statsmodels.distributions import ECDF # installed from http://sciki
 
 import util
 
-TRAIN_DIR = "train"
-
+# list of all XML tags
 call_list = pickle.load(open('tag_list.p', 'r'))
 call_set = set(call_list)
 
+# List of all features (excluding the ECDF features, which are appended later). Note that the numbered features just
+# refer to socket numbers.
 features = call_list + map(lambda s : s + ' indicator', call_list) + map(str, range(4000))\
            + ['has_socket', 'socket count', 'has_import', 'has_export', 'FILE_ANY_ACCESS', 'SECURITY_ANONYMOUS',
               'destroy_window', 'targetpid count', 'delete_value count', 'bytes_sent', 'bytes_received', 'any_sent',
               'any_received', 'totaltime']
 
+# Construct a data matrix for the first <num> observations of the training and test data.
 def create_data_matrix(num=None):
     X = None
     classes = []
@@ -66,8 +68,11 @@ def create_data_matrix(num=None):
         direc = 'train' if clazz != 'X' else 'test'
         tree = ET.parse(os.path.join(direc, datafile))
 
+        # use call_feats to generate features
         this_row_dict = call_feats(tree)
+        # string containing the text of the file
         str = open(os.path.join(direc, datafile), 'r').read()
+        # generate several features by searching the text of the file for certain substrings
         this_row_dict['has_socket'] = int('socket' in str)
         this_row_dict['has_import'] = int('import' in str)
         this_row_dict['has_export'] = int('export' in str)
@@ -78,13 +83,15 @@ def create_data_matrix(num=None):
         this_row_dict['targetpid count'] = str.count('targetpid')
         this_row_dict['delete_value count'] = str.count('delete_value')
 
+        # convert the dictionary into an array
         this_row = np.array([(this_row_dict[feature] if feature in this_row_dict else 0) for feature in features])
-        #this_row = call_feats(tree)
+        # add the row to the data matrix X
         if X is None:
             X = this_row
         else:
             X = np.vstack((X, this_row))
 
+    # add empirical CDF features for every existing nontrivial non-binary feature
     X = X.T
     for i in range(len(X)):
         if X[i].any() and len(set(X[i])) > 2:
@@ -94,10 +101,8 @@ def create_data_matrix(num=None):
 
     return X, np.array(classes), ids, features
 
+# Generate a dictionary containing most of the features for the input XML tree.
 def call_feats(tree):
-    #good_calls = ['sleep', 'dump_line']
-    #good_calls = call_list + ['bytes_sent', 'bytes_received', 'totaltime']
-
     call_counter = {}
     call_counter['bytes_sent'] = 0
     call_counter['bytes_received'] = 0
@@ -106,7 +111,7 @@ def call_feats(tree):
     call_counter['totaltime'] = 0
     for el in tree.iter():
         call = el.tag
-        # system calls
+        # check for each system calls
         if call not in call_counter:
             call_counter[call] = 1
             call_counter[call + ' indicator'] = 1
